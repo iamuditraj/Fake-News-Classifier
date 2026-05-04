@@ -225,7 +225,7 @@ def compute_metrics(eval_pred):
 
     return {
         "accuracy": accuracy_score(labels, preds),
-        "macro_f1": f1_score(labels, preds, average="macro"),
+        "f1": f1_score(labels, preds, average="macro"),
         "roc_auc":  roc_auc_score(labels, pos_probs),
     }
 
@@ -306,7 +306,7 @@ def get_training_args(
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
-        metric_for_best_model="macro_f1",
+        metric_for_best_model="f1",
         greater_is_better=True,
         save_total_limit=2,                  # keep only 2 best checkpoints
 
@@ -460,9 +460,22 @@ def main():
     export_metrics["epochs"] = args.epochs
     export_metrics["batch_size"] = args.batch
 
+    if os.path.exists(metrics_path):
+        try:
+            with open(metrics_path, "r") as f:
+                existing_data = json.load(f)
+            if not isinstance(existing_data, list):
+                existing_data = [existing_data]
+        except Exception:
+            existing_data = []
+    else:
+        existing_data = []
+        
+    existing_data.append(export_metrics)
+
     with open(metrics_path, "w") as f:
-        json.dump(export_metrics, f, indent=4)
-    print(f"  Metrics saved to {metrics_path} ✓")
+        json.dump(existing_data, f, indent=4)
+    print(f"  Metrics appended to {metrics_path} ✓")
 
     print(f"\n{'='*60}")
     print("  Training complete!")
